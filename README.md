@@ -54,6 +54,9 @@ Cấu trúc project :
  
 FaceRec_App/
 │
+├──haar/
+│    └──haarcascade_frontalface_default.xml
+│
 ├── dataset/                 # (Bước 1) Lưu ảnh dataset theo từng người
 │   ├── NguyenVanA/          
 │   ├── TranVanB/

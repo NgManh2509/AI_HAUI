@@ -1,35 +1,116 @@
 import streamlit as st
 import cv2
 import os
-from PIL import Image
 import numpy as np
+
+# =========================
+# CẤU HÌNH ĐƯỜNG DẪN
+# =========================
 try:
     PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
 except NameError:
-    PROJECT_ROOT = os.getcwd() 
+    PROJECT_ROOT = os.getcwd()
 
-DATASET_PATH = os.path.join(PROJECT_ROOT, "dataset") 
+DATASET_PATH = os.path.join(PROJECT_ROOT, "dataset")
+HAAR_DIR = os.path.join(PROJECT_ROOT, "haar")
+CASCADE_PATH = os.path.join(HAAR_DIR, "haarcascade_frontalface_default.xml")
 
 if not os.path.exists(DATASET_PATH):
-    os.makedirs(DATASET_PATH)
+    os.makedirs(DATASET_PATH, exist_ok=True)
+
+TARGET_IMAGES_PER_PERSON = 20  # số ảnh gợi ý nên chụp / người
+
+# =========================
+# CẤU HÌNH GIAO DIỆN
+# =========================
+st.set_page_config(
+    page_title="AI HAUI - Hệ thống Nhận diện khuôn mặt",
+    layout="wide",
+    page_icon="📷",
+)
+
+# CSS nhẹ cho đẹp
+st.markdown(
+    """
+    <style>
+        .main-title {
+            font-size: 32px;
+            font-weight: 800;
+            text-align: center;
+            margin-bottom: 0.25rem;
+        }
+        .sub-title {
+            text-align: center;
+            font-size: 14px;
+            color: #666666;
+            margin-bottom: 1.5rem;
+        }
+        .step-box, .dataset-box {
+            padding: 1rem 1.2rem;
+            border-radius: 0.6rem;
+            border: 1px solid #e0e0e0;
+            margin-bottom: 1rem;
+        }
+        .step-box {
+            background-color: #fafafa;
+        }
+        .dataset-box {
+            background-color: #ffffff;
+        }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
+st.markdown('<div class="main-title">HỆ THỐNG NHẬN DIỆN KHUÔN MẶT</div>', unsafe_allow_html=True)
+st.markdown(
+    '<div class="sub-title">Bước 1: Thu thập dữ liệu khuôn mặt (crop & grayscale, lưu vào dataset)</div>',
+    unsafe_allow_html=True,
+)
+
+# =========================
+# KIỂM TRA & LOAD HAAR CASCADE
+# =========================
+if not os.path.exists(CASCADE_PATH):
+    st.error(
+        f"Không tìm thấy file cascade: `{CASCADE_PATH}`.\n\n"
+        "Hãy tải file **haarcascade_frontalface_default.xml** từ OpenCV và đặt vào thư mục `haar/`."
+    )
+    st.stop()
+
+face_cascade = cv2.CascadeClassifier(CASCADE_PATH)
+if face_cascade.empty():
+    st.error("Không load được Haar Cascade. Kiểm tra lại file `haarcascade_frontalface_default.xml`.")
+    st.stop()
 
 
-def _save_image(frame, person_folder_path):
-    """Hàm phụ dùng để lưu ảnh (Hỗ trợ Unicode)"""
+# =========================
+# HÀM LƯU ẢNH
+# =========================
+def _save_image(frame, person_folder_path: str):
+    """
+    Lưu ảnh (grayscale hoặc màu) vào thư mục dataset/<person>/.
+    frame: numpy array (2D grayscale hoặc 3D BGR)
+    """
     if not os.path.exists(person_folder_path):
-        os.makedirs(person_folder_path)
-        
+        os.makedirs(person_folder_path, exist_ok=True)
+
     try:
         is_success, img_encoded = cv2.imencode(".jpg", frame)
         if is_success:
-            
-            count = len(os.listdir(person_folder_path)) + 1
+            count = len(
+                [
+                    f
+                    for f in os.listdir(person_folder_path)
+                    if os.path.isfile(os.path.join(person_folder_path, f))
+                ]
+            ) + 1
             file_path = os.path.join(person_folder_path, f"{count}.jpg")
 
-            with open(file_path, 'wb') as f:
+            with open(file_path, "wb") as f:
                 f.write(img_encoded.tobytes())
-            
-            print(f"Đã lưu ảnh: {file_path}") 
+
+            print(f"Đã lưu ảnh: {file_path}")
             return True, file_path
         else:
             print("Lỗi: cv2.imencode() thất bại.")
@@ -38,59 +119,186 @@ def _save_image(frame, person_folder_path):
         print(f"Lỗi hệ thống khi lưu file: {e}")
         return False, str(e)
 
-st.set_page_config(page_title="Hệ thống Nhận diện", layout="wide")
-st.title("HỆ THỐNG NHẬN DIỆN KHUÔN MẶT")
 
-col1, col2 = st.columns([2, 3]) 
+# =========================
+# HÀM PHÁT HIỆN & CROP KHUÔN MẶT
+# =========================
+def detect_and_crop_face_gray(bgr_image, expand_ratio=0.15):
+    """
+    - Chuyển ảnh sang grayscale
+    - Dò mặt bằng Haar trên ảnh grayscale
+    - Crop vùng mặt (grayscale) + trả thêm bản màu để preview
+    """
+    gray_frame = cv2.cvtColor(bgr_image, cv2.COLOR_BGR2GRAY)
 
+    faces = face_cascade.detectMultiScale(
+        gray_frame,
+        scaleFactor=1.1,
+        minNeighbors=5,
+        minSize=(80, 80),
+    )
+
+    if len(faces) == 0:
+        return None, None, None
+
+    # Lấy khuôn mặt lớn nhất (tránh trường hợp có nhiều người trong ảnh)
+    x, y, w, h = max(faces, key=lambda f: f[2] * f[3])
+
+    # Mở rộng box một chút cho đỡ cắt sát mặt
+    h_expand = int(h * expand_ratio)
+    w_expand = int(w * expand_ratio)
+
+    y1 = max(0, y - h_expand)
+    y2 = min(gray_frame.shape[0], y + h + h_expand)
+    x1 = max(0, x - w_expand)
+    x2 = min(gray_frame.shape[1], x + w + w_expand)
+
+    face_gray = gray_frame[y1:y2, x1:x2].copy()
+    face_color = bgr_image[y1:y2, x1:x2].copy()
+
+    return face_gray, face_color, (x1, y1, x2, y2)
+
+
+# =========================
+# LAYOUT 2 CỘT
+# =========================
+col1, col2 = st.columns([2, 3])
+
+# ========= COL 1: CHỤP ẢNH & LƯU =========
 with col1:
-    st.header("Bước 1: Thu thập Dữ liệu")
-    st.write("Nhập tên, sau đó bấm nút chụp ảnh nhiều lần.")
-    
-    person_name = st.text_input("Nhập tên của bạn:", "TenNguoiMau")
-    
-    picture = st.camera_input("Chụp ảnh (Thẳng, Nghiêng Trái, Nghiêng Phải)", key="camera_capture")
+    st.markdown('<div class="step-box">', unsafe_allow_html=True)
+    st.subheader("📸 Bước 1: Thu thập dữ liệu khuôn mặt")
+
+    st.write(
+        "- Nhập **tên người** (hoặc mã SV, mã nhân viên, …)\n"
+        "- Chụp nhiều ảnh với các góc: **thẳng**, **nghiêng trái**, **nghiêng phải**, **biểu cảm khác nhau**.\n"
+        f"- Khuyến nghị: khoảng **10–{TARGET_IMAGES_PER_PERSON} ảnh/người** để train model tốt hơn."
+    )
+
+    person_name = st.text_input("Nhập tên / mã định danh của bạn:", "TenNguoiMau")
+
+    # Thông tin số ảnh hiện có của người này
+    person_folder_path = (
+        os.path.join(DATASET_PATH, person_name.strip())
+        if person_name.strip()
+        else None
+    )
+    current_count = 0
+    if person_folder_path and os.path.exists(person_folder_path):
+        current_count = len(
+            [
+                f
+                for f in os.listdir(person_folder_path)
+                if os.path.isfile(os.path.join(person_folder_path, f))
+            ]
+        )
+
+    if person_name and person_name.strip() and person_name != "TenNguoiMau":
+        st.info(f"Hiện tại đã có **{current_count} ảnh** của `{person_name}` trong dataset.")
+        progress = min(current_count / TARGET_IMAGES_PER_PERSON, 1.0)
+        st.progress(progress)
+        st.caption(f"Mục tiêu đề xuất: {TARGET_IMAGES_PER_PERSON} ảnh / người")
+    else:
+        st.warning("Vui lòng nhập tên/mã định danh thực tế trước khi chụp ảnh.")
+
+    picture = st.camera_input(
+        "Chụp ảnh (Thẳng, Nghiêng trái, Nghiêng phải)",
+        key="camera_capture",
+    )
 
     if picture is not None:
         if not person_name or person_name == "TenNguoiMau" or person_name.strip() == "":
-            st.error("Vui lòng nhập tên của bạn trước khi chụp!")
+            st.error("❌ Bạn chưa nhập tên/mã định danh. Vui lòng nhập trước khi chụp!")
         else:
+            # Decode ảnh từ camera
             bytes_data = picture.getvalue()
             cv2_img = cv2.imdecode(np.frombuffer(bytes_data, np.uint8), cv2.IMREAD_COLOR)
 
             if cv2_img is not None and cv2_img.size > 0:
-                person_folder_path = os.path.join(DATASET_PATH, person_name.strip())
-                success, path = _save_image(cv2_img, person_folder_path)
-                
-                if success:
-                    st.success(f"Đã lưu: {os.path.basename(path)}")
-                    st.info("Chụp ảnh tiếp theo (góc khác)...")
+                # Phát hiện & crop khuôn mặt (grayscale + preview màu)
+                face_gray, face_color, box = detect_and_crop_face_gray(cv2_img)
+
+                if face_gray is None:
+                    st.error("Không tìm thấy khuôn mặt trong ảnh. Hãy chụp lại, căn mặt rõ hơn.")
                 else:
-                    st.error(f"Lỗi khi lưu: {path}")
+                    # Lưu ảnh grayscale
+                    person_folder_path = os.path.join(DATASET_PATH, person_name.strip())
+                    success, path = _save_image(face_gray, person_folder_path)
+
+                    if success:
+                        new_count = len(
+                            [
+                                f
+                                for f in os.listdir(person_folder_path)
+                                if os.path.isfile(os.path.join(person_folder_path, f))
+                            ]
+                        )
+
+                        st.success(f"✅ Đã lưu ảnh khuôn mặt (grayscale): **{os.path.basename(path)}**")
+                        st.info(f"Tổng số ảnh hiện có của **{person_name}**: **{new_count}**")
+
+                        # Hiển thị preview
+                        st.write("📷 Khuôn mặt (màu) để xem rõ:")
+                        st.image(cv2.cvtColor(face_color, cv2.COLOR_BGR2RGB), use_container_width=True)
+
+                        st.write("🖤 Khuôn mặt (grayscale) đã lưu:")
+                        st.image(face_gray, use_container_width=True)
+
+                        st.caption("👉 Tiếp tục chụp thêm ảnh với nhiều góc khác nhau để dataset đa dạng hơn.")
+                    else:
+                        st.error(f"❌ Lỗi khi lưu ảnh: {path}")
             else:
                 st.error("Không thể đọc dữ liệu ảnh từ camera.")
+    st.markdown("</div>", unsafe_allow_html=True)
 
-
+# ========= COL 2: THỐNG KÊ DATASET =========
 with col2:
-    st.header("Thông tin Dữ liệu")
-    st.write("Kiểm tra số lượng ảnh đã có (Bấm Cập nhật).")
+    st.markdown('<div class="dataset-box">', unsafe_allow_html=True)
+    st.subheader("📂 Bước 2: Kiểm tra dữ liệu đã thu thập")
 
-    if st.button("Cập nhật danh sách", key="refresh_sidebar"):
+    st.write(
+        "Xem nhanh **danh sách người** và **số lượng ảnh** tương ứng "
+        "đã được lưu trong thư mục `dataset/` (mỗi ảnh là 1 khuôn mặt đã crop & grayscale)."
+    )
+
+    if st.button("🔄 Cập nhật danh sách", key="refresh_sidebar"):
         st.rerun()
 
     if os.path.exists(DATASET_PATH):
         try:
-            
-            folders = [f for f in os.listdir(DATASET_PATH) if os.path.isdir(os.path.join(DATASET_PATH, f))]
+            folders = [
+                f
+                for f in os.listdir(DATASET_PATH)
+                if os.path.isdir(os.path.join(DATASET_PATH, f))
+            ]
             if folders:
-                st.write(f"Đã có dữ liệu của {len(folders)} người:")
+                st.write(f"Đã có dữ liệu của **{len(folders)} người**:")
+
+                data_rows = []
                 for folder in folders:
                     try:
-                        count = len([f for f in os.listdir(os.path.join(DATASET_PATH, folder)) if os.path.isfile(os.path.join(DATASET_PATH, folder, f))])
-                        st.markdown(f"- **{folder}**: {count} ảnh")
-                    except Exception as e:
+                        folder_path = os.path.join(DATASET_PATH, folder)
+                        count = len(
+                            [
+                                f
+                                for f in os.listdir(folder_path)
+                                if os.path.isfile(os.path.join(folder_path, f))
+                            ]
+                        )
+                        data_rows.append({"Tên / Mã": folder, "Số ảnh": count})
+                    except Exception:
                         st.warning(f"Không thể đọc thư mục: {folder}")
+
+                if data_rows:
+                    st.table(data_rows)
             else:
-                st.write("Chưa có dữ liệu.")
+                st.info("Chưa có dữ liệu nào trong `dataset/`. Hãy bắt đầu chụp ảnh ở cột bên trái.")
         except Exception as e:
             st.error(f"Không thể đọc thư mục dataset: {e}")
+    else:
+        st.error("Thư mục `dataset/` chưa tồn tại. Hệ thống sẽ tự tạo sau khi bạn lưu ảnh đầu tiên.")
+
+    st.markdown("</div>", unsafe_allow_html=True)
+
+st.markdown("---")
+st.caption("AI HAUI – Giai đoạn 1: Thu thập dataset khuôn mặt (crop + grayscale) để train model KNN / face_recognition.")
