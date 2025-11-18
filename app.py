@@ -159,32 +159,26 @@ def detect_and_crop_face_gray(bgr_image, expand_ratio=0.15):
     return face_gray, face_color, (x1, y1, x2, y2)
 
 
-# =========================
-# LAYOUT 2 CỘT
-# =========================
-col1, col2 = st.columns([2, 3])
 
-# ========= COL 1: CHỤP ẢNH & LƯU =========
-with col1:
-    st.markdown('<div class="step-box">', unsafe_allow_html=True)
-    st.subheader("📸 Bước 1: Thu thập dữ liệu khuôn mặt")
+st.markdown('<div class="step-box">', unsafe_allow_html=True)
+st.subheader("📸 Bước 1: Thu thập dữ liệu khuôn mặt")
 
-    st.write(
+st.write(
         "- Nhập **tên người** (hoặc mã SV, mã nhân viên, …)\n"
         "- Chụp nhiều ảnh với các góc: **thẳng**, **nghiêng trái**, **nghiêng phải**, **biểu cảm khác nhau**.\n"
         f"- Khuyến nghị: khoảng **10–{TARGET_IMAGES_PER_PERSON} ảnh/người** để train model tốt hơn."
     )
 
-    person_name = st.text_input("Nhập tên / mã định danh của bạn:", "TenNguoiMau")
+person_name = st.text_input("Nhập tên / mã định danh của bạn:", "TenNguoiMau")
 
     # Thông tin số ảnh hiện có của người này
-    person_folder_path = (
+person_folder_path = (
         os.path.join(DATASET_PATH, person_name.strip())
         if person_name.strip()
         else None
     )
-    current_count = 0
-    if person_folder_path and os.path.exists(person_folder_path):
+current_count = 0
+if person_folder_path and os.path.exists(person_folder_path):
         current_count = len(
             [
                 f
@@ -193,20 +187,20 @@ with col1:
             ]
         )
 
-    if person_name and person_name.strip() and person_name != "TenNguoiMau":
+if person_name and person_name.strip() and person_name != "TenNguoiMau":
         st.info(f"Hiện tại đã có **{current_count} ảnh** của `{person_name}` trong dataset.")
         progress = min(current_count / TARGET_IMAGES_PER_PERSON, 1.0)
         st.progress(progress)
         st.caption(f"Mục tiêu đề xuất: {TARGET_IMAGES_PER_PERSON} ảnh / người")
-    else:
-        st.warning("Vui lòng nhập tên/mã định danh thực tế trước khi chụp ảnh.")
+else:
+    st.warning("Vui lòng nhập tên/mã định danh thực tế trước khi chụp ảnh.")
 
-    picture = st.camera_input(
+picture = st.camera_input(
         "Chụp ảnh (Thẳng, Nghiêng trái, Nghiêng phải)",
         key="camera_capture",
     )
 
-    if picture is not None:
+if picture is not None:
         if not person_name or person_name == "TenNguoiMau" or person_name.strip() == "":
             st.error("❌ Bạn chưa nhập tên/mã định danh. Vui lòng nhập trước khi chụp!")
         else:
@@ -249,56 +243,8 @@ with col1:
                         st.error(f"❌ Lỗi khi lưu ảnh: {path}")
             else:
                 st.error("Không thể đọc dữ liệu ảnh từ camera.")
-    st.markdown("</div>", unsafe_allow_html=True)
+st.markdown("</div>", unsafe_allow_html=True)
 
 # ========= COL 2: THỐNG KÊ DATASET =========
-with col2:
-    st.markdown('<div class="dataset-box">', unsafe_allow_html=True)
-    st.subheader("📂 Bước 2: Kiểm tra dữ liệu đã thu thập")
-
-    st.write(
-        "Xem nhanh **danh sách người** và **số lượng ảnh** tương ứng "
-        "đã được lưu trong thư mục `dataset/` (mỗi ảnh là 1 khuôn mặt đã crop & grayscale)."
-    )
-
-    if st.button("🔄 Cập nhật danh sách", key="refresh_sidebar"):
-        st.rerun()
-
-    if os.path.exists(DATASET_PATH):
-        try:
-            folders = [
-                f
-                for f in os.listdir(DATASET_PATH)
-                if os.path.isdir(os.path.join(DATASET_PATH, f))
-            ]
-            if folders:
-                st.write(f"Đã có dữ liệu của **{len(folders)} người**:")
-
-                data_rows = []
-                for folder in folders:
-                    try:
-                        folder_path = os.path.join(DATASET_PATH, folder)
-                        count = len(
-                            [
-                                f
-                                for f in os.listdir(folder_path)
-                                if os.path.isfile(os.path.join(folder_path, f))
-                            ]
-                        )
-                        data_rows.append({"Tên / Mã": folder, "Số ảnh": count})
-                    except Exception:
-                        st.warning(f"Không thể đọc thư mục: {folder}")
-
-                if data_rows:
-                    st.table(data_rows)
-            else:
-                st.info("Chưa có dữ liệu nào trong `dataset/`. Hãy bắt đầu chụp ảnh ở cột bên trái.")
-        except Exception as e:
-            st.error(f"Không thể đọc thư mục dataset: {e}")
-    else:
-        st.error("Thư mục `dataset/` chưa tồn tại. Hệ thống sẽ tự tạo sau khi bạn lưu ảnh đầu tiên.")
-
-    st.markdown("</div>", unsafe_allow_html=True)
-
 st.markdown("---")
 st.caption("AI HAUI – Giai đoạn 1: Thu thập dataset khuôn mặt (crop + grayscale) để train model KNN / face_recognition.")
