@@ -21,7 +21,7 @@ if not os.path.exists(DATASET_PATH):
 TARGET_IMAGES_PER_PERSON = 20  # số ảnh gợi ý nên chụp / người
 
 # =========================
-# CẤU HÌNH GIAO DIỆN
+# CẤU HÌNH GIAO DIỆN CHUNG
 # =========================
 st.set_page_config(
     page_title="AI HAUI - Hệ thống Nhận diện khuôn mặt",
@@ -59,12 +59,6 @@ st.markdown(
         }
     </style>
     """,
-    unsafe_allow_html=True,
-)
-
-st.markdown('<div class="main-title">HỆ THỐNG NHẬN DIỆN KHUÔN MẶT</div>', unsafe_allow_html=True)
-st.markdown(
-    '<div class="sub-title">Bước 1: Thu thập dữ liệu khuôn mặt (crop & grayscale, lưu vào dataset)</div>',
     unsafe_allow_html=True,
 )
 
@@ -159,26 +153,35 @@ def detect_and_crop_face_gray(bgr_image, expand_ratio=0.15):
     return face_gray, face_color, (x1, y1, x2, y2)
 
 
+# =========================
+# PAGE 1: CHỤP ẢNH (THU THẬP DỮ LIỆU)
+# =========================
+def page_chup_anh():
+    st.markdown('<div class="main-title">HỆ THỐNG NHẬN DIỆN KHUÔN MẶT</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="sub-title">Bước 1: Thu thập dữ liệu khuôn mặt (crop & grayscale, lưu vào dataset)</div>',
+        unsafe_allow_html=True,
+    )
 
-st.markdown('<div class="step-box">', unsafe_allow_html=True)
-st.subheader("📸 Bước 1: Thu thập dữ liệu khuôn mặt")
+    st.markdown('<div class="step-box">', unsafe_allow_html=True)
+    st.subheader("📸 Bước 1: Thu thập dữ liệu khuôn mặt")
 
-st.write(
+    st.write(
         "- Nhập **tên người** (hoặc mã SV, mã nhân viên, …)\n"
         "- Chụp nhiều ảnh với các góc: **thẳng**, **nghiêng trái**, **nghiêng phải**, **biểu cảm khác nhau**.\n"
         f"- Khuyến nghị: khoảng **10–{TARGET_IMAGES_PER_PERSON} ảnh/người** để train model tốt hơn."
     )
 
-person_name = st.text_input("Nhập tên / mã định danh của bạn:", "TenNguoiMau")
+    person_name = st.text_input("Nhập tên / mã định danh của bạn:", "TenNguoiMau")
 
     # Thông tin số ảnh hiện có của người này
-person_folder_path = (
+    person_folder_path = (
         os.path.join(DATASET_PATH, person_name.strip())
         if person_name.strip()
         else None
     )
-current_count = 0
-if person_folder_path and os.path.exists(person_folder_path):
+    current_count = 0
+    if person_folder_path and os.path.exists(person_folder_path):
         current_count = len(
             [
                 f
@@ -187,20 +190,20 @@ if person_folder_path and os.path.exists(person_folder_path):
             ]
         )
 
-if person_name and person_name.strip() and person_name != "TenNguoiMau":
+    if person_name and person_name.strip() and person_name != "TenNguoiMau":
         st.info(f"Hiện tại đã có **{current_count} ảnh** của `{person_name}` trong dataset.")
         progress = min(current_count / TARGET_IMAGES_PER_PERSON, 1.0)
         st.progress(progress)
         st.caption(f"Mục tiêu đề xuất: {TARGET_IMAGES_PER_PERSON} ảnh / người")
-else:
-    st.warning("Vui lòng nhập tên/mã định danh thực tế trước khi chụp ảnh.")
+    else:
+        st.warning("Vui lòng nhập tên/mã định danh thực tế trước khi chụp ảnh.")
 
-picture = st.camera_input(
+    picture = st.camera_input(
         "Chụp ảnh (Thẳng, Nghiêng trái, Nghiêng phải)",
         key="camera_capture",
     )
 
-if picture is not None:
+    if picture is not None:
         if not person_name or person_name == "TenNguoiMau" or person_name.strip() == "":
             st.error("❌ Bạn chưa nhập tên/mã định danh. Vui lòng nhập trước khi chụp!")
         else:
@@ -243,8 +246,73 @@ if picture is not None:
                         st.error(f"❌ Lỗi khi lưu ảnh: {path}")
             else:
                 st.error("Không thể đọc dữ liệu ảnh từ camera.")
-st.markdown("</div>", unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
 
-# ========= COL 2: THỐNG KÊ DATASET =========
-st.markdown("---")
-st.caption("AI HAUI – Giai đoạn 1: Thu thập dataset khuôn mặt (crop + grayscale) để train model KNN / face_recognition.")
+    st.markdown("---")
+    st.caption(
+        "AI HAUI – Giai đoạn 1: Thu thập dataset khuôn mặt (crop + grayscale) để train model KNN / face_recognition."
+    )
+
+
+# =========================
+# PAGE 2: NHẬN DIỆN
+# =========================
+def page_nhan_dien():
+    st.markdown('<div class="main-title">HỆ THỐNG NHẬN DIỆN KHUÔN MẶT</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="sub-title">Bước 2: Nhận diện khuôn mặt từ camera / ảnh upload</div>',
+        unsafe_allow_html=True,
+    )
+
+    st.subheader("👀 Nhận diện (demo)")
+    st.info(
+        "Phần này bạn có thể:\n"
+        "- Load model đã train (KNN, LBPH, hoặc face_recognition)\n"
+        "- Mở camera hoặc upload ảnh, dò mặt và gán tên theo dataset.\n\n"
+        "Hiện tại mình chỉ tạo sẵn khung giao diện, bạn nhét code nhận diện của bạn vào đây."
+    )
+
+    # Ví dụ khung upload ảnh để nhận diện
+    uploaded_img = st.file_uploader("Upload ảnh để nhận diện khuôn mặt", type=["jpg", "jpeg", "png"])
+
+    if uploaded_img is not None:
+        bytes_data = uploaded_img.read()
+        cv2_img = cv2.imdecode(np.frombuffer(bytes_data, np.uint8), cv2.IMREAD_COLOR)
+
+        if cv2_img is None or cv2_img.size == 0:
+            st.error("Không đọc được ảnh. Thử lại ảnh khác.")
+            return
+
+        gray = cv2.cvtColor(cv2_img, cv2.COLOR_BGR2GRAY)
+        faces = face_cascade.detectMultiScale(gray, 1.1, 5, minSize=(80, 80))
+
+        if len(faces) == 0:
+            st.warning("Không phát hiện khuôn mặt nào trong ảnh.")
+        else:
+            # Vẽ bounding box demo (chưa gắn tên)
+            for (x, y, w, h) in faces:
+                cv2.rectangle(cv2_img, (x, y), (x + w, y + h), (0, 255, 0), 2)
+
+            st.image(cv2.cvtColor(cv2_img, cv2.COLOR_BGR2RGB), caption="Ảnh với bounding box khuôn mặt", use_container_width=True)
+            st.caption("👉 Sau này bạn dùng model nhận diện để gán tên vào từng khuôn mặt.")
+
+
+# =========================
+# MAIN: MENU BAR
+# =========================
+def main():
+    # Sidebar menu
+    st.sidebar.title("Menu")
+    choice = st.sidebar.radio(
+        "Chọn chức năng",
+        ["Chụp ảnh", "Nhận diện"]
+    )
+
+    if choice == "Chụp ảnh":
+        page_chup_anh()
+    else:
+        page_nhan_dien()
+
+
+if __name__ == "__main__":
+    main()
