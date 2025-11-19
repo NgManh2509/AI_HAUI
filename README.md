@@ -63,7 +63,7 @@ FaceRec_App/
 │   └── ...
 │
 ├── output/                  # (Bước 2) Model đã train
-│   └── encodings.pickle     # File mã hóa đặc trưng khuôn mặt
+│   └── model_knn.nqz     # File mã hóa đặc trưng khuôn mặt
 │
 ├── app.py                   # Giao diện chính bằng Streamlit
 │
@@ -71,4 +71,31 @@ FaceRec_App/
 │
 ├── requirements.txt         # Danh sách thư viện cần cài
 │
+├── knn_func.py              # Thuật toán KNN
+│
+├──data.csv
+│
 └── README.md                # Tài liệu hướng dẫn
+
+
+Cách triển khai : 
+Step 1:
+Open terminal, type : python -m venv venv 
+Để tạo môi trường ảo cho python 
+
+Step 2: 
+Open new terminal type: pip install streamlit opencv-python numpy Pillow pandas
+Để tải các thư viện cần thiết
+
+Step 3:
+Chạy chương trình qua lệnh : streamlit run app.py 
+Để chạy webApp qua lib streamlit, chương trình sẽ chuyển qua web streamlit để chạy
+Vào mục đầu tiên, nhập tên và chụp ảnh ( khoảng 20++ bức là đủ) 
+
+Step 4:
+Tạo terminal mới
+Chạy training model qua lệnh : python train.py
+Chương trình sẽ tạo data.csv và trained_model ở phần output (model_knn.nqz)
+
+Step 5:
+Quay lại web streamlit vừa mở, upload ảnh để thuật toán chạy và hiện tên đối tượng trong ảnh
