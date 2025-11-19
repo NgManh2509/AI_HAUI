@@ -35,7 +35,7 @@ dụng OpenCV, Haar Cascade và thuật toán K-Nearest Neighbors (KNN) tự cà
 
 
 ## 4. Cấu trúc project :
- 
+```
 FaceRec_App/
 │
 ├──haar/
@@ -60,25 +60,37 @@ FaceRec_App/
 ├──data.csv                  # Được tạo sau khi chạy train_model.py
 │
 └── README.md                # Tài liệu hướng dẫn
-
+```
 
 ## 5. Cách triển khai : 
 ### Step 1:
-        Mở một terminal mới : python -m venv venv 
+        Mở một terminal mới : 
+        ```
+        python -m venv venv 
+        ```
         Để tạo môi trường ảo cho python 
 
 ### Step 2: 
-        Mở một terminal khác: pip install streamlit opencv-python numpy Pillow pandas
+        Mở một terminal khác: 
+        ```
+        pip install streamlit opencv-python numpy Pillow pandas
+        ```
         Để tải các thư viện cần thiết
 
 ### Step 3:
-        Chạy chương trình qua lệnh : streamlit run app.py 
+        Chạy chương trình qua lệnh : 
+        ```
+        streamlit run app.py 
+        ```
         Để chạy webApp qua lib streamlit, chương trình sẽ chuyển qua web streamlit để chạy
         Vào mục đầu tiên, nhập tên và chụp ảnh ( khoảng 20++ bức là đủ) 
 
 ### Step 4:
         Tạo terminal mới
-        Chạy training model qua lệnh : python train.py
+        Chạy training model qua lệnh : 
+        ```
+        python train.py
+        ```
         Chương trình sẽ tạo data.csv và trained_model ở phần output (model_knn.nqz)
 
 ### Step 5:
