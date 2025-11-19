@@ -3,6 +3,7 @@ import cv2
 import numpy as np
 import streamlit as st
 
+from PIL import ImageFont, ImageDraw, Image
 from knn_func import load_knn_from_npz
 
 # =========================
@@ -20,8 +21,8 @@ CASCADE_PATH = os.path.join(HAAR_DIR, "haarcascade_frontalface_default.xml")
 OUTPUT_DIR = os.path.join(PROJECT_ROOT, "output")
 MODEL_PATH = os.path.join(OUTPUT_DIR, "model_knn.npz")
 
-IMG_SIZE = (100, 100)               # kích thước ảnh mặt để train/predict
-TARGET_IMAGES_PER_PERSON = 20       # gợi ý số ảnh nên chụp / người
+IMG_SIZE = (100, 100)              
+TARGET_IMAGES_PER_PERSON = 20       
 
 # =========================
 # CẤU HÌNH GIAO DIỆN
@@ -173,9 +174,6 @@ def draw_rounded_rectangle(img, top_left, bottom_right, color, thickness=2, radi
 
 
 def predict_name_from_gray_face(gray_face):
-    """
-    Dự đoán tên từ 1 ảnh mặt (grayscale 2D) bằng model KNN tự code.
-    """
     if knn_model is None:
         return "Unknown (chưa có model)"
 
@@ -187,6 +185,17 @@ def predict_name_from_gray_face(gray_face):
         return str(pred)
     except Exception:
         return "Unknown"
+
+def draw_vietnamese_text(img_bgr, text, pos, font_size=24, color=(0, 255, 0)):
+    img_rgb = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB)
+    img_pil = Image.fromarray(img_rgb)
+    draw = ImageDraw.Draw(img_pil)
+
+    font = ImageFont.truetype("arial.ttf", font_size)
+
+    draw.text(pos, text, font=font, fill=color)
+
+    return cv2.cvtColor(np.array(img_pil), cv2.COLOR_RGB2BGR)
 
 
 # =========================
@@ -324,15 +333,12 @@ def page_nhan_dien():
             thickness=2,
             radius=20,
         )
-        cv2.putText(
+        cv2_img = draw_vietnamese_text(
             cv2_img,
             name,
-            (x, y - 10),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            0.7,
-            (0, 255, 0),
-            2,
-            cv2.LINE_AA,
+            (x, y - 30),      
+            font_size=26,
+            color=(0, 255, 0)
         )
 
     st.image(
