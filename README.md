@@ -1,57 +1,41 @@
-🎯 Mục tiêu
+# Ứng dụng thuật toán KNN vào bài toán nhận diện người trong ảnh
 
-Nhận diện nhiều khuôn mặt trong một ảnh bất kỳ.
+## 1. Giới thiệu dự án
 
-Cho phép người dùng tự tạo dataset bằng ảnh chụp cá nhân.
+Dự án "Ứng dụng thuật toán KNN vào bài toán nhận diện người trong ảnh"
+là một hệ thống nhận diện khuôn mặt đơn giản, nhẹ, dễ triển khai, sử
+dụng OpenCV, Haar Cascade và thuật toán K-Nearest Neighbors (KNN) tự cài
+đặt.
 
-Giao diện chạy bằng Streamlit, dễ dàng upload ảnh và xem kết quả.
+Ứng dụng hỗ trợ: - Thu thập dữ liệu khuôn mặt từ camera\
+- Huấn luyện mô hình KNN từ dataset\
+- Nhận diện khuôn mặt trong ảnh upload\
+- Hiển thị tên người kèm khung bo góc đẹp
 
-🧪 Tiêu chuẩn hoàn thành
+## 2. Mục tiêu và lý do thực hiện
 
-✔ Nhận diện đúng nhiều khuôn mặt trong ảnh
-✔ Hỗ trợ tạo dataset bằng ảnh chụp (10–20 ảnh/người)
-✔ Có mô-đun train để tạo file mã hoá khuôn mặt (encodings.pickle)
+### Mục tiêu
 
-🔄 Quy trình thực hiện
-Bước 1: Tạo Dataset
+-   Xây dựng mô hình nhận diện người đơn giản, dễ hiểu.\
+-   Giúp sinh viên nắm được cách hoạt động của thuật toán KNN trong thị
+    giác máy tính.\
+-   Minh họa pipeline AI: thu thập → xử lý → train → nhận diện.
 
-Chụp 10–20 ảnh cho mỗi người.
+### Lý do thực hiện
 
-Lưu ảnh theo từng folder con tương ứng với tên mỗi người.
+-   KNN là thuật toán cơ bản, dễ triển khai nhưng hiệu quả với dataset
+    nhỏ.
+-   Tạo công cụ nhận diện nhanh, dùng trong đề tài học tập.
 
-Bước 2: Upload ảnh kiểm thử
+## 3. Tính năng chính
 
-Mở giao diện Streamlit.
-
-Upload ảnh và để hệ thống tự động nhận diện.
-
-Bước 3: Testing
-
-Kiểm tra kết quả nhận diện.
-
-Có thể chụp thêm ảnh và cải thiện dataset nếu cần.
-
-🛠 Công nghệ sử dụng
-
-Ngôn ngữ: Python
-
-Thư viện chính:
-
-face_recognition – Nhận diện khuôn mặt
-
-streamlit – Giao diện web chạy trực tiếp
-
-📌 Yêu cầu môi trường
-
-Python 3.10+
-
-Cài đặt thư viện bằng:
-
-pip install -r requirements.txt
+-   Chụp ảnh và tạo dataset.
+-   Train mô hình KNN.
+-   Nhận diện khuôn mặt từ ảnh upload.
 
 
-Cấu trúc project :
- 
+## 4. Cấu trúc project :
+```
 FaceRec_App/
 │
 ├──haar/
@@ -62,8 +46,8 @@ FaceRec_App/
 │   ├── TranVanB/
 │   └── ...
 │
-├── output/                  # (Bước 2) Model đã train
-│   └── encodings.pickle     # File mã hóa đặc trưng khuôn mặt
+├── output/                  # (Bước 2) Model đã train, được tạo sau khi chạy train_model.py
+│   └── model_knn.nqz           # File mã hóa đặc trưng khuôn mặt
 │
 ├── app.py                   # Giao diện chính bằng Streamlit
 │
@@ -71,4 +55,43 @@ FaceRec_App/
 │
 ├── requirements.txt         # Danh sách thư viện cần cài
 │
+├── knn_func.py              # Thuật toán KNN
+│
+├──data.csv                  # Được tạo sau khi chạy train_model.py
+│
 └── README.md                # Tài liệu hướng dẫn
+```
+
+## 5. Cách triển khai : 
+### Step 1:
+        Mở một terminal mới : 
+        ```
+        python -m venv venv 
+        ```
+        Để tạo môi trường ảo cho python 
+
+### Step 2: 
+        Mở một terminal khác: 
+        ```
+        pip install streamlit opencv-python numpy Pillow pandas
+        ```
+        Để tải các thư viện cần thiết
+
+### Step 3:
+        Chạy chương trình qua lệnh : 
+        ```
+        streamlit run app.py 
+        ```
+        Để chạy webApp qua lib streamlit, chương trình sẽ chuyển qua web streamlit để chạy
+        Vào mục đầu tiên, nhập tên và chụp ảnh ( khoảng 20++ bức là đủ) 
+
+### Step 4:
+        Tạo terminal mới
+        Chạy training model qua lệnh : 
+        ```
+        python train.py
+        ```
+        Chương trình sẽ tạo data.csv và trained_model ở phần output (model_knn.nqz)
+
+### Step 5:
+        Quay lại web streamlit vừa mở, upload ảnh để thuật toán chạy và hiện tên đối tượng trong ảnh
