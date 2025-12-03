@@ -15,6 +15,7 @@ weights/
 
 # Model files (can be regenerated)
 model_knn.npz
+data.csv
 
 # Dataset - personal images (privacy)
 dataset/
