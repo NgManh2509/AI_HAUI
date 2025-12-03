@@ -63,19 +63,44 @@ FaceRec_App/
 ```
 
 ## 5. Cách triển khai : 
-### Step 1:
-        Mở một terminal mới : 
-        ```
-        python -m venv venv 
-        ```
-        Để tạo môi trường ảo cho python 
+### Step 1: Tạo môi trường ảo
+```bash
+python -m venv venv
+```
 
-### Step 2: 
-        Mở một terminal khác: 
-        ```
-        pip install streamlit opencv-python numpy Pillow pandas
-        ```
-        Để tải các thư viện cần thiết
+**Kích hoạt môi trường ảo:**
+- Windows PowerShell:
+  ```powershell
+  venv\Scripts\Activate.ps1
+  ```
+- Windows CMD:
+  ```cmd
+  venv\Scripts\activate.bat
+  ```
+- Linux/Mac:
+  ```bash
+  source venv/bin/activate
+  ```
+
+### Step 2: Cài đặt thư viện cần thiết
+```bash
+pip install -r requirements.txt
+```
+
+**Hoặc cài thủ công:**
+```bash
+pip install streamlit opencv-python numpy Pillow pandas deepface tf-keras tensorflow
+```
+
+**Danh sách thư viện:**
+- `streamlit` - Web framework
+- `opencv-python` - Xử lý ảnh và video
+- `numpy` - Tính toán ma trận
+- `Pillow` - Xử lý ảnh
+- `pandas` - Quản lý dữ liệu
+- `deepface` - Face recognition với deep learning
+- `tf-keras` - Keras backend cho DeepFace
+- `tensorflow` - Deep learning framework
 
 ### Step 3:
         Chạy chương trình qua lệnh : 

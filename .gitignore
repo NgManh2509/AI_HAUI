@@ -1,0 +1,41 @@
+# Virtual Environment
+venv/
+env/
+ENV/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# DeepFace cache (very large)
+.DeepFace/
+weights/
+
+# Model files (can be regenerated)
+model_knn.npz
+
+# Dataset - personal images (privacy)
+dataset/
+*.jpg
+*.png
+*.jpeg
+*.bmp
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Debug files
+debug_*.py
+test_*.py

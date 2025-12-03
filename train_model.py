@@ -2,6 +2,7 @@ import os
 import cv2
 import numpy as np
 import pandas as pd
+from deepface import DeepFace
 
 try:
     PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
@@ -14,7 +15,7 @@ CSV_PATH = os.path.join(PROJECT_ROOT, "data.csv")
 MODEL_PATH = os.path.join(OUTPUT_DIR, "model_knn.npz")
 
 IMG_SIZE = (100,100)
-K = 1
+K = 3
 
 
 def build_csv():
@@ -37,18 +38,26 @@ def build_csv():
                 continue
 
             img_path = os.path.join(person_folder, filename)
-            data = np.fromfile(img_path, dtype=np.uint8)
-            img = cv2.imdecode(data, cv2.IMREAD_GRAYSCALE)
-
-            if img is None:
-                print("  Không đọc được ảnh:", img_path)
+            
+            try:
+                # Trích xuất face embedding bằng DeepFace
+                result = DeepFace.represent(
+                    img_path=img_path,
+                    model_name="ArcFace",  # Model chính xác hơn
+                    enforce_detection=False  # Không bắt buộc detect face
+                )
+                
+                # Lấy embedding vector (128 chiều)
+                embedding = result[0]["embedding"]
+                
+                # Thêm vào features
+                features.append(embedding)
+                labels.append(person_name)
+                count_person += 1
+                
+            except Exception as e:
+                print(f"  Lỗi khi xử lý {filename}: {e}")
                 continue
-
-
-            img = cv2.resize(img, IMG_SIZE)
-            features.append(img.reshape(-1))
-            labels.append(person_name)
-            count_person += 1
         
         print(f"-> Số ánh dùng được: {count_person}")
 
