@@ -62,33 +62,35 @@ FaceRec_App/
 └── README.md                # Tài liệu hướng dẫn
 ```
 
-## 5. Cách triển khai : 
-### Step 1: Tạo môi trường ảo
+## 5. Yêu cầu hệ thống
+- **Python 3.13** (khuyến nghị) hoặc Python 3.11-3.12
+- Windows/Linux/Mac
+
+## 6. Cách triển khai
+
+### Step 1: Tạo môi trường ảo với Python 3.13
 ```bash
-python -m venv venv
+# Sử dụng Python 3.13
+py -3.13 -m venv .venv
 ```
 
 **Kích hoạt môi trường ảo:**
 - Windows PowerShell:
   ```powershell
-  venv\Scripts\Activate.ps1
+  .venv\Scripts\Activate.ps1
   ```
 - Windows CMD:
   ```cmd
-  venv\Scripts\activate.bat
+  .venv\Scripts\activate.bat
   ```
 - Linux/Mac:
   ```bash
-  source venv/bin/activate
+  source .venv/bin/activate
   ```
 
 ### Step 2: Cài đặt thư viện cần thiết
 ```bash
-pip install -r requirements.txt
-```
-
-**Hoặc cài thủ công:**
-```bash
+pip install --upgrade pip
 pip install streamlit opencv-python numpy Pillow pandas deepface tf-keras tensorflow
 ```
 
@@ -99,7 +101,7 @@ pip install streamlit opencv-python numpy Pillow pandas deepface tf-keras tensor
 - `Pillow` - Xử lý ảnh
 - `pandas` - Quản lý dữ liệu
 - `deepface` - Face recognition với deep learning
-- `tf-keras` - Keras backend cho DeepFace
+- `tf-keras` - Keras backend cho DeepFace (yêu cầu cho TensorFlow 2.20+)
 - `tensorflow` - Deep learning framework
 
 ### Step 3:
