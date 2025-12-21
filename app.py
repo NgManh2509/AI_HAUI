@@ -92,13 +92,9 @@ def _save_image(frame, person_folder_path: str):
 
 
 def detect_and_extract_faces(bgr_image):
-    """
-    Dùng DeepFace để detect và extract faces
-    Trả về: list of (face_bgr, facial_area_dict)
-    """
     try:
         rgb_image = cv2.cvtColor(bgr_image, cv2.COLOR_BGR2RGB)
-        
+        #Nhận diện khuôn mặt
         face_objs = DeepFace.extract_faces(
             img_path=rgb_image,
             detector_backend=DETECTOR_BACKEND,
@@ -110,6 +106,7 @@ def detect_and_extract_faces(bgr_image):
             return []
         
         results = []
+        # Trả về danh sách (face_bgr, facial_area)
         for face_obj in face_objs:
             facial_area = face_obj['facial_area']
             x, y, w, h = facial_area['x'], facial_area['y'], facial_area['w'], facial_area['h']
@@ -143,19 +140,7 @@ def draw_rounded_rectangle(img, top_left, bottom_right, color, thickness=2, radi
     cv2.ellipse(img, (x2 - radius, y2 - radius), (radius, radius), 0, 0, 90, color, thickness)
 
 
-def predict_name_from_face(face_bgr, confidence_threshold=4.0):
-    """
-    Predict tên từ face BGR image với confidence threshold
-    Trả về: (name, distance) hoặc ("Unknown", None)
-    
-    Note: Với Facenet, distance thường:
-    - Same person (very confident): < 5
-    - Same person (good): 5-7
-    - Uncertain: 7-10
-    - Different person: > 10
-    
-    Threshold 7.0 = strict mode (giảm false positive)
-    """
+def predict_name_from_face(face_bgr, confidence_threshold=3.7):
     if knn_model is None:
         return "Unknown", None
 
